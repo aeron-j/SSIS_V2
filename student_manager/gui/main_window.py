@@ -309,6 +309,20 @@ class MainWindow:
         end_idx = min(start_idx + self.rows_per_page, len(students))
         
         for student in students[start_idx:end_idx]:
+            # Handle college display
+            college_display = "N/A"
+            if student['college_name']:
+                college_display = student['college_name']
+            elif student['college_code']:
+                college_display = student['college_code']
+                
+            # Handle course display
+            course_display = "N/A"
+            if student['course_name']:
+                course_display = student['course_name']
+            elif student['course_code']:
+                course_display = student['course_code']
+                
             display_values = (
                 student['student_id'],
                 student['first_name'],
@@ -316,8 +330,8 @@ class MainWindow:
                 student['age'],
                 student['gender'],
                 student['year_level'],
-                student['college_name'] or student['college_code'] or "N/A",
-                student['course_name'] or student['course_code'] or "N/A"
+                college_display,
+                course_display
             )
             self.table.insert("", "end", values=display_values)
         

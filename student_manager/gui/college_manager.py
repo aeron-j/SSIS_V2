@@ -295,18 +295,26 @@ class CollegeManager:
         confirm = messagebox.askyesno(
             "Confirm Delete", 
             f"Are you sure you want to delete college '{college_code} - {college_name}'?\n"
-            "Courses will remain, but students will be marked with N/A in College."
+            "All courses will be unassigned from this college."
         )
         
         if confirm:
             try:
-                # First update students referencing this college to set college_code to NULL
-                update_query = """
+                # First update students to remove college reference (keep course)
+                update_students_query = """
                 UPDATE students 
-                SET college_code = NULL, course_code = NULL 
+                SET college_code = NULL 
                 WHERE college_code = %s
                 """
-                self.db.execute_query(update_query, (college_code,))
+                self.db.execute_query(update_students_query, (college_code,))
+                
+                # Then update courses to remove college reference
+                update_courses_query = """
+                UPDATE courses 
+                SET college_code = NULL 
+                WHERE college_code = %s
+                """
+                self.db.execute_query(update_courses_query, (college_code,))
                 
                 # Then delete the college
                 delete_query = "DELETE FROM colleges WHERE college_code = %s"
@@ -314,7 +322,7 @@ class CollegeManager:
                     messagebox.showinfo(
                         "College Deleted", 
                         f"College '{college_code} - {college_name}' has been deleted.\n"
-                        "Courses were retained and students were updated."
+                        "Courses were unassigned from this college."
                     )
                     self.refresh_table()
                     if self.main_window_ref:

@@ -134,17 +134,29 @@ class MySQLDatabase:
         return self.execute_query(query, (college_code, college_name, old_code))
         
     def delete_college(self, college_code):
-        # First update students referencing this college
-        update_query = """
-        UPDATE students 
-        SET college_code = NULL, course_code = NULL 
-        WHERE college_code = %s
-        """
-        self.execute_query(update_query, (college_code,))
-        
-        # Then delete the college
-        delete_query = "DELETE FROM colleges WHERE college_code = %s"
-        return self.execute_query(delete_query, (college_code,))
+        try:
+            # First update students to remove college reference (keep course)
+            update_students_query = """
+            UPDATE students 
+            SET college_code = NULL 
+            WHERE college_code = %s
+            """
+            self.execute_query(update_students_query, (college_code,))
+            
+            # Then update courses to remove college reference
+            update_courses_query = """
+            UPDATE courses 
+            SET college_code = NULL 
+            WHERE college_code = %s
+            """
+            self.execute_query(update_courses_query, (college_code,))
+            
+            # Then delete the college
+            delete_query = "DELETE FROM colleges WHERE college_code = %s"
+            return self.execute_query(delete_query, (college_code,))
+        except Exception as e:
+            print(f"Error deleting college: {e}")
+            return False
         
     def add_course(self, course_code, course_name, college_code):
         query = """
