@@ -199,6 +199,17 @@ class CollegeManager:
                 messagebox.showerror("Duplicate", f"College with code {code} already exists")
                 return
             
+            # Check for duplicate name
+            existing_name = self.db.execute_query(
+                "SELECT college_name FROM colleges WHERE college_name = %s",
+                (name,),
+                fetch=True
+            )
+            
+            if existing_name:
+                messagebox.showerror("Duplicate", f"College with name {name} already exists")
+                return
+            
             # Add to database
             if self.db.add_college(code, name):
                 messagebox.showinfo("Success", "College added successfully")
@@ -265,7 +276,18 @@ class CollegeManager:
                 if existing:
                     messagebox.showerror("Duplicate", f"College with code {new_code} already exists")
                     return
-
+            # Check for duplicate name
+            if new_name != current_name:
+                existing_name = self.db.execute_query(
+                    "SELECT college_name FROM colleges WHERE college_name = %s",
+                    (new_name,),
+                    fetch=True
+                )
+                
+                if existing_name:
+                    messagebox.showerror("Duplicate", f"College with name {new_name} already exists")
+                    return
+            
             # Update in database
             if self.db.update_college(current_code, new_code, new_name):
                 messagebox.showinfo("Success", "College updated successfully", parent=edit_dialog)

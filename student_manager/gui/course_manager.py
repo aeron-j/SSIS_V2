@@ -268,6 +268,17 @@ class CourseManager:
                 messagebox.showerror("Duplicate", f"Course with code {code} already exists")
                 return
             
+            # Check for duplicate course name
+            existing_name = self.db.execute_query(
+                "SELECT course_name FROM courses WHERE course_name = %s",
+                (name,),
+                fetch=True
+            )
+            
+            if existing_name:
+                messagebox.showerror("Duplicate", f"Course with name {name} already exists")
+                return
+                
             # Add to database
             if self.db.add_course(code, name, college_code):
                 messagebox.showinfo("Success", "Course added successfully")
@@ -353,6 +364,18 @@ class CourseManager:
                 
                 if existing:
                     messagebox.showerror("Duplicate", f"Course with code {new_code} already exists")
+                    return
+                
+            # Check for duplicate name (only if name changed)
+            if new_name != current_name:
+                existing_name = self.db.execute_query(
+                    "SELECT course_name FROM courses WHERE course_name = %s",
+                    (new_name,),
+                    fetch=True
+                )
+                
+                if existing_name:
+                    messagebox.showerror("Duplicate", f"Course with name {new_name} already exists")
                     return
 
             # Update in database

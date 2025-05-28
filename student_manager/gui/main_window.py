@@ -63,7 +63,7 @@ class MainWindow:
         self.entry_search.pack(pady=5)
         
         # Clear Data button (matching the image)
-        tk.Button(self.control_frame, text="Clear Data", **button_style).pack(pady=10, padx=5)
+        tk.Button(self.control_frame, text="Clear Data", command=self.clear_all_students, **button_style).pack(pady=10, padx=5)
         
         # Management buttons
         tk.Button(self.control_frame, text="Manage Colleges", command=self.open_college_manager, **button_style).pack(pady=5, padx=5)
@@ -414,6 +414,25 @@ class MainWindow:
     def search_student(self, event=None):
         self.current_page = 1
         self.refresh_table()
+
+    def clear_all_students(self):
+        """Delete all students from the database"""
+        confirm = messagebox.askyesno(
+            "Confirm Clear All Data",
+            "Are you sure you want to delete ALL student records?\nThis action cannot be undone."
+        )
+        
+        if confirm:
+            try:
+                # Delete all students
+                query = "DELETE FROM students"
+                if self.db.execute_query(query):
+                    messagebox.showinfo("Success", "All student records have been deleted")
+                    self.refresh_table()
+                else:
+                    messagebox.showerror("Error", "Failed to delete student records")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete student records: {str(e)}")
     
     def add_student(self):
         add_dialog = tk.Toplevel(self.root)

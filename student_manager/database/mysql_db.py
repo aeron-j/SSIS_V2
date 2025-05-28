@@ -250,7 +250,13 @@ class MySQLDatabase:
         # Then delete the course
         delete_query = "DELETE FROM courses WHERE course_code = %s"
         return self.execute_query(delete_query, (course_code,))
+    
+    def clear_all_students(self):
+        """Delete all student records from the database"""
+        query = "DELETE FROM students"
+        return self.execute_query(query)
         
     def close(self):
         if self.connection and self.connection.is_connected():
             self.connection.close()
+            
