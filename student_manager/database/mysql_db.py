@@ -76,14 +76,17 @@ class MySQLDatabase:
             if filters.get('gender'):
                 where_clauses.append("s.gender = %s")
                 params.append(filters['gender'])
-            if filters.get('search'):
-                search = f"%{filters['search']}%"
-                where_clauses.append("""
-                (s.student_id LIKE %s OR 
-                 s.first_name LIKE %s OR 
-                 s.last_name LIKE %s)
-                """)
-                params.extend([search, search, search])
+            
+            # Handle different search criteria
+            if filters.get('search_id'):
+                where_clauses.append("s.student_id LIKE %s")
+                params.append(f"%{filters['search_id']}%")
+            elif filters.get('search_first_name'):
+                where_clauses.append("s.first_name LIKE %s")
+                params.append(f"%{filters['search_first_name']}%")
+            elif filters.get('search_last_name'):
+                where_clauses.append("s.last_name LIKE %s")
+                params.append(f"%{filters['search_last_name']}%")
         
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
@@ -126,12 +129,47 @@ class MySQLDatabase:
         return self.execute_query(query, (college_code, college_name))
         
     def update_college(self, old_code, college_code, college_name):
-        query = """
-        UPDATE colleges 
-        SET college_code = %s, college_name = %s 
-        WHERE college_code = %s
-        """
-        return self.execute_query(query, (college_code, college_name, old_code))
+        try:
+            cursor = self.connection.cursor()
+            
+            # Temporarily disable foreign key checks
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+            
+            # Update students table first
+            cursor.execute("""
+                UPDATE students 
+                SET college_code = %s 
+                WHERE college_code = %s
+            """, (college_code, old_code))
+            
+            # Update courses table
+            cursor.execute("""
+                UPDATE courses 
+                SET college_code = %s 
+                WHERE college_code = %s
+            """, (college_code, old_code))
+            
+            # Update colleges table
+            cursor.execute("""
+                UPDATE colleges 
+                SET college_code = %s, college_name = %s 
+                WHERE college_code = %s
+            """, (college_code, college_name, old_code))
+            
+            # Re-enable foreign key checks
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+            
+            self.connection.commit()
+            return True
+            
+        except Error as e:
+            print(f"Error updating college: {e}")
+            self.connection.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
         
     def delete_college(self, college_code):
         try:
@@ -166,12 +204,39 @@ class MySQLDatabase:
         return self.execute_query(query, (course_code, course_name, college_code))
         
     def update_course(self, old_code, course_code, course_name, college_code):
-        query = """
-        UPDATE courses 
-        SET course_code = %s, course_name = %s, college_code = %s
-        WHERE course_code = %s
-        """
-        return self.execute_query(query, (course_code, course_name, college_code, old_code))
+        try:
+            cursor = self.connection.cursor()
+            
+            # Temporarily disable foreign key checks
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+            
+            # Update students table first
+            cursor.execute("""
+                UPDATE students 
+                SET course_code = %s 
+                WHERE course_code = %s
+            """, (course_code, old_code))
+            
+            # Update courses table
+            cursor.execute("""
+                UPDATE courses 
+                SET course_code = %s, course_name = %s, college_code = %s
+                WHERE course_code = %s
+            """, (course_code, course_name, college_code, old_code))
+            
+            # Re-enable foreign key checks
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+            
+            self.connection.commit()
+            return True
+            
+        except Error as e:
+            print(f"Error updating course: {e}")
+            self.connection.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
         
     def delete_course(self, course_code):
         # First update students referencing this course

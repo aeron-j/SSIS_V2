@@ -309,18 +309,13 @@ class MainWindow:
         end_idx = min(start_idx + self.rows_per_page, len(students))
         
         for student in students[start_idx:end_idx]:
-            # Handle college display
             college_display = "N/A"
-            if student['college_name']:
-                college_display = student['college_name']
-            elif student['college_code']:
+            if student['college_code']:
                 college_display = student['college_code']
                 
             # Handle course display
             course_display = "N/A"
-            if student['course_name']:
-                course_display = student['course_name']
-            elif student['course_code']:
+            if student['course_code']:
                 course_display = student['course_code']
                 
             display_values = (
@@ -352,7 +347,7 @@ class MainWindow:
     
     def get_current_filters(self):
         filters = {}
-        
+    
         # College filter
         selected_college = self.college_var.get()
         if selected_college and selected_college != "All Colleges":
@@ -369,10 +364,16 @@ class MainWindow:
         if selected_gender and selected_gender != "All Genders":
             filters['gender'] = selected_gender
         
-        # Search filter
+        # Search filter - modified to use the selected search criteria
         search_text = self.entry_search.get().strip()
         if search_text:
-            filters['search'] = search_text
+            search_by = self.search_var.get()
+            if search_by == "ID#":
+                filters['search_id'] = search_text
+            elif search_by == "First Name":
+                filters['search_first_name'] = search_text
+            elif search_by == "Last Name":
+                filters['search_last_name'] = search_text
         
         # Sort options
         sort_by = self.primary_sort.get()
@@ -385,8 +386,8 @@ class MainWindow:
                 "Age": "age",
                 "Gender": "gender",
                 "Year Level": "year_level",
-                "College": "college_name",
-                "Course": "course_name"
+                "College": "college_code",
+                "Course": "course_code"
             }
             filters['sort_by'] = sort_mapping.get(sort_by, "last_name")
             filters['sort_order'] = self.sort_order.get()
