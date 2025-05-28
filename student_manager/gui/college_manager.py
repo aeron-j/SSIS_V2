@@ -18,14 +18,11 @@ class CollegeManager:
         self.refresh_table()
     
     def setup_ui(self):
-        # Main frame
         main_frame = tk.Frame(self.window)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Title
         tk.Label(main_frame, text="Colleges", font=("Arial", 14, "bold")).pack(pady=10)
         
-        # College table
         self.columns = ("College Code", "College Name", "Number of Courses")
         self.college_table = ttk.Treeview(main_frame, columns=self.columns, show="headings", height=15)
         
@@ -35,7 +32,6 @@ class CollegeManager:
         
         self.college_table.pack(fill=tk.BOTH, expand=True)
         
-        # Button frame
         button_frame = tk.Frame(main_frame)
         button_frame.pack(pady=10)
         
@@ -43,15 +39,12 @@ class CollegeManager:
         tk.Button(button_frame, text="Edit College", command=self.edit_college).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Delete College", command=self.delete_college).pack(side=tk.LEFT, padx=5)
         
-        # Search and sort controls
         self.setup_search_sort_controls(main_frame)
         
-        # Bind click event
         self.college_table.bind("<Button-1>", self.on_click)
         self._last_selected = None
     
     def setup_search_sort_controls(self, parent):
-        # Search frame
         search_frame = tk.Frame(parent)
         search_frame.pack(fill=tk.X, pady=5)
         
@@ -61,7 +54,6 @@ class CollegeManager:
         self.search_entry.pack(side=tk.LEFT, padx=5)
         self.search_var.trace('w', self.on_search_change)
         
-        # Sort frame
         sort_frame = tk.Frame(parent)
         sort_frame.pack(fill=tk.X, pady=5)
         
@@ -117,7 +109,6 @@ class CollegeManager:
         self.college_table.delete(*self.college_table.get_children())
         
         try:
-            # Get colleges with course counts
             query = """
             SELECT c.college_code, c.college_name, COUNT(co.course_code) as course_count
             FROM colleges c
@@ -127,7 +118,6 @@ class CollegeManager:
             
             colleges = self.db.execute_query(query, fetch=True)
             
-            # Apply search filter
             search_text = self.search_var.get().lower()
             if search_text:
                 colleges = [
@@ -136,7 +126,6 @@ class CollegeManager:
                         search_text in c['college_name'].lower())
                 ]
             
-            # Apply sorting
             sort_by = self.sort_var.get()
             reverse = self.sort_order.get() == "Descending"
             
@@ -144,10 +133,10 @@ class CollegeManager:
                 colleges.sort(key=lambda x: x['college_code'], reverse=reverse)
             elif sort_by == "College Name":
                 colleges.sort(key=lambda x: x['college_name'], reverse=reverse)
-            else:  # Number of Courses
+            else:  
                 colleges.sort(key=lambda x: x['course_count'], reverse=reverse)
             
-            # Populate table
+           
             for college in colleges:
                 self.college_table.insert("", "end", values=(
                     college['college_code'],
@@ -188,7 +177,6 @@ class CollegeManager:
             if not validate_college_name(name):
                 return
                 
-            # Check for duplicates
             existing = self.db.execute_query(
                 "SELECT college_code FROM colleges WHERE college_code = %s",
                 (code,),
@@ -199,7 +187,6 @@ class CollegeManager:
                 messagebox.showerror("Duplicate", f"College with code {code} already exists")
                 return
             
-            # Check for duplicate name
             existing_name = self.db.execute_query(
                 "SELECT college_name FROM colleges WHERE college_name = %s",
                 (name,),
@@ -210,7 +197,6 @@ class CollegeManager:
                 messagebox.showerror("Duplicate", f"College with name {name} already exists")
                 return
             
-            # Add to database
             if self.db.add_college(code, name):
                 messagebox.showinfo("Success", "College added successfully")
                 self.refresh_table()
@@ -266,7 +252,6 @@ class CollegeManager:
                 return
                 
             if new_code != current_code:
-                # Check if new code already exists
                 existing = self.db.execute_query(
                     "SELECT college_code FROM colleges WHERE college_code = %s",
                     (new_code,),
@@ -276,7 +261,7 @@ class CollegeManager:
                 if existing:
                     messagebox.showerror("Duplicate", f"College with code {new_code} already exists")
                     return
-            # Check for duplicate name
+
             if new_name != current_name:
                 existing_name = self.db.execute_query(
                     "SELECT college_name FROM colleges WHERE college_name = %s",
@@ -288,13 +273,12 @@ class CollegeManager:
                     messagebox.showerror("Duplicate", f"College with name {new_name} already exists")
                     return
             
-            # Update in database
             if self.db.update_college(current_code, new_code, new_name):
                 messagebox.showinfo("Success", "College updated successfully", parent=edit_dialog)
                 self.refresh_table()
                 if self.main_window_ref:
                     self.main_window_ref.refresh_filter_values()
-                    self.main_window_ref.refresh_table()  # Add this line to refresh the student table
+                    self.main_window_ref.refresh_table()  
                 edit_dialog.destroy()
             else:
                     messagebox.showerror("Error", "Failed to update college", parent=edit_dialog)
@@ -322,7 +306,6 @@ class CollegeManager:
         
         if confirm:
             try:
-                # First update students to remove college reference (keep course)
                 update_students_query = """
                 UPDATE students 
                 SET college_code = NULL 
@@ -330,7 +313,6 @@ class CollegeManager:
                 """
                 self.db.execute_query(update_students_query, (college_code,))
                 
-                # Then update courses to remove college reference
                 update_courses_query = """
                 UPDATE courses 
                 SET college_code = NULL 
@@ -338,7 +320,6 @@ class CollegeManager:
                 """
                 self.db.execute_query(update_courses_query, (college_code,))
                 
-                # Then delete the college
                 delete_query = "DELETE FROM colleges WHERE college_code = %s"
                 if self.db.execute_query(delete_query, (college_code,)):
                     messagebox.showinfo(

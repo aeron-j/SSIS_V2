@@ -1,7 +1,6 @@
 import sys
 import os
 
-# Add the parent directory to the Python path to find config module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import DB_CONFIG
@@ -10,7 +9,6 @@ from mysql.connector import Error
 
 def setup_database():
     try:
-        # Connect without specifying a database
         connection = mysql.connector.connect(
             host=DB_CONFIG['host'],
             user=DB_CONFIG['user'],
@@ -20,14 +18,11 @@ def setup_database():
         if connection.is_connected():
             cursor = connection.cursor()
             
-            # Create database if not exists
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}")
             print(f"Database {DB_CONFIG['database']} created successfully")
             
-            # Switch to the database
             cursor.execute(f"USE {DB_CONFIG['database']}")
             
-            # Create colleges table
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS colleges (
                 college_code VARCHAR(10) PRIMARY KEY,
@@ -36,7 +31,6 @@ def setup_database():
             """)
             print("Colleges table created successfully")
             
-            # Create courses table
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS courses (
                 course_code VARCHAR(20) PRIMARY KEY,
@@ -47,7 +41,6 @@ def setup_database():
             """)
             print("Courses table created successfully")
             
-            # Create students table
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 student_id VARCHAR(20) PRIMARY KEY,
@@ -66,7 +59,6 @@ def setup_database():
             
             connection.commit()
             
-            # Close cursor and connection
             cursor.close()
             connection.close()
             

@@ -3,7 +3,7 @@ from tkinter import messagebox
 import sys
 import os
 
-# Add the database directory to the Python path
+
 sys.path.append(os.path.join(os.path.dirname(__file__), 'database'))
 
 try:
@@ -16,22 +16,19 @@ from database.mysql_db import MySQLDatabase
 from config import DB_CONFIG
 
 def initialize_database():
-    """Ensure database connection is valid and tables exist"""
     db = MySQLDatabase()
     
-    # Test connection and basic functionality
     try:
-        # Verify tables exist (this will raise an error if they don't)
         result = db.execute_query("SELECT 1 FROM colleges LIMIT 1", fetch=True)
-        if result is False:  # Query failed
+        if result is False:  
             raise Exception("Could not access colleges table")
             
         result = db.execute_query("SELECT 1 FROM courses LIMIT 1", fetch=True)
-        if result is False:  # Query failed
+        if result is False:  
             raise Exception("Could not access courses table")
             
         result = db.execute_query("SELECT 1 FROM students LIMIT 1", fetch=True)
-        if result is False:  # Query failed
+        if result is False:  
             raise Exception("Could not access students table")
             
         print("Database validation successful")
@@ -58,18 +55,16 @@ def create_simple_test_window(db):
     root.title("Student Management System - Test Mode")
     root.geometry("600x400")
     
-    # Test database connectivity
     frame = tk.Frame(root, padx=20, pady=20)
     frame.pack(fill=tk.BOTH, expand=True)
     
     tk.Label(frame, text="Student Management System", font=("Arial", 16, "bold")).pack(pady=10)
     
-    # Test buttons
     def test_colleges():
         colleges = db.get_colleges()
         if colleges:
             result = f"Found {len(colleges)} colleges:\n"
-            for college in colleges[:5]:  # Show first 5
+            for college in colleges[:5]:  
                 result += f"- {college['college_code']}: {college['college_name']}\n"
             messagebox.showinfo("Colleges", result)
         else:
@@ -79,7 +74,7 @@ def create_simple_test_window(db):
         courses = db.get_all_courses()
         if courses:
             result = f"Found {len(courses)} courses:\n"
-            for course in courses[:5]:  # Show first 5
+            for course in courses[:5]:  
                 result += f"- {course['course_code']}: {course['course_name']}\n"
             messagebox.showinfo("Courses", result)
         else:
@@ -89,7 +84,7 @@ def create_simple_test_window(db):
         students = db.get_students()
         if students:
             result = f"Found {len(students)} students:\n"
-            for student in students[:5]:  # Show first 5
+            for student in students[:5]:  
                 result += f"- {student['student_id']}: {student['first_name']} {student['last_name']}\n"
             messagebox.showinfo("Students", result)
         else:
@@ -105,34 +100,28 @@ def create_simple_test_window(db):
     return root
 
 def main():
-    # Initialize database connection
     try:
-        # Verify database structure first
         initialize_database()
         
-        # Create main application window
         root = tk.Tk()
         root.title(DB_CONFIG.get('app_name', 'Student Management System'))
         
-        # Set window icon if available
         try:
             icon = tk.PhotoImage(file='assets/icon.png')
             root.iconphoto(True, icon)
         except:
-            pass  # Icon is optional
+            pass  
 
-        # Create database instance
+        
         db = MySQLDatabase()
         
-        # Initialize main application window
+        
         if MainWindow:
             app = MainWindow(root, db)
         else:
-            # Use simple test interface if main GUI is not available
             root.destroy()
             root = create_simple_test_window(db)
         
-        # Set up graceful shutdown
         def on_closing():
             if messagebox.askokcancel("Quit", "Do you want to exit the application?"):
                 if 'db' in locals():
@@ -141,7 +130,6 @@ def main():
         
         root.protocol("WM_DELETE_WINDOW", on_closing)
         
-        # Start the application
         root.mainloop()
         
     except Exception as e:

@@ -17,11 +17,9 @@ class CourseManager:
         self.refresh_table()
 
     def setup_ui(self):
-        # Main frame
         main_frame = tk.Frame(self.window)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Filter controls
         filter_frame = tk.Frame(main_frame)
         filter_frame.pack(fill=tk.X, pady=5)
         
@@ -43,7 +41,6 @@ class CourseManager:
             command=self.refresh_table
         ).pack(side=tk.LEFT, padx=5)
         
-        # Course table
         self.columns = ("Course Code", "Course Name", "College")
         self.course_table = ttk.Treeview(main_frame, columns=self.columns, show="headings")
         
@@ -56,7 +53,6 @@ class CourseManager:
         
         self.course_table.pack(fill=tk.BOTH, expand=True)
         
-        # Button frame
         button_frame = tk.Frame(main_frame)
         button_frame.pack(pady=10)
         
@@ -64,18 +60,14 @@ class CourseManager:
         tk.Button(button_frame, text="Edit Course", command=self.edit_course).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Delete Course", command=self.delete_course).pack(side=tk.LEFT, padx=5)
         
-        # Search and sort controls
         self.setup_search_sort_controls(main_frame)
         
-        # Bind click event
         self.course_table.bind("<Button-1>", self.on_click)
         self._last_selected = None
         
-        # Load college filter options
         self.load_college_filter_options()
 
     def setup_search_sort_controls(self, parent):
-        # Search frame
         search_frame = tk.Frame(parent)
         search_frame.pack(fill=tk.X, pady=5)
         
@@ -96,7 +88,6 @@ class CourseManager:
         
         self.search_var.trace('w', self.on_search_change)
         
-        # Sort frame
         sort_frame = tk.Frame(parent)
         sort_frame.pack(fill=tk.X, pady=5)
         
@@ -157,14 +148,12 @@ class CourseManager:
         self.course_table.delete(*self.course_table.get_children())
         
         try:
-            # Get courses with college information
             query = """
             SELECT c.course_code, c.course_name, co.college_code, co.college_name
             FROM courses c
             LEFT JOIN colleges co ON c.college_code = co.college_code
             """
             
-            # Apply college filter
             selected_college = self.college_filter_var.get()
             if selected_college and selected_college != "All Colleges":
                 college_code = selected_college.split(' - ')[0]
@@ -175,7 +164,6 @@ class CourseManager:
             
             courses = self.db.execute_query(query, params, fetch=True)
             
-            # Apply search filter
             search_text = self.search_var.get().lower()
             search_by = self.search_by_var.get()
             
@@ -185,7 +173,6 @@ class CourseManager:
                 elif search_by == "Course Name":
                     courses = [c for c in courses if search_text in c['course_name'].lower()]
             
-            # Apply sorting
             sort_by = self.sort_var.get()
             reverse = self.sort_order.get() == "Descending"
             
@@ -193,15 +180,14 @@ class CourseManager:
                 courses.sort(key=lambda x: x['course_code'], reverse=reverse)
             elif sort_by == "Course Name":
                 courses.sort(key=lambda x: x['course_name'], reverse=reverse)
-            else:  # College
+            else:  
                 courses.sort(key=lambda x: x['college_name'] or "", reverse=reverse)
             
-            # Populate table
             for course in courses:
                 self.course_table.insert("", "end", values=(
                     course['course_code'],
                     course['course_name'],
-                    f"{course['college_code']} - {course['college_name']}" if course['college_code'] else "N/A"
+                    course['college_code'] if course['college_code'] else "N/A"
                 ))
                 
         except Exception as e:
@@ -257,7 +243,6 @@ class CourseManager:
                 
             college_code = college.split(' - ')[0]
             
-            # Check for duplicate course code
             existing = self.db.execute_query(
                 "SELECT course_code FROM courses WHERE course_code = %s",
                 (code,),
@@ -268,7 +253,6 @@ class CourseManager:
                 messagebox.showerror("Duplicate", f"Course with code {code} already exists")
                 return
             
-            # Check for duplicate course name
             existing_name = self.db.execute_query(
                 "SELECT course_name FROM courses WHERE course_name = %s",
                 (name,),
@@ -279,7 +263,6 @@ class CourseManager:
                 messagebox.showerror("Duplicate", f"Course with name {name} already exists")
                 return
                 
-            # Add to database
             if self.db.add_course(code, name, college_code):
                 messagebox.showinfo("Success", "Course added successfully")
                 self.refresh_table()
@@ -355,7 +338,6 @@ class CourseManager:
             college_code = college.split(' - ')[0]
             
             if new_code != current_code:
-                # Check if new code already exists
                 existing = self.db.execute_query(
                     "SELECT course_code FROM courses WHERE course_code = %s",
                     (new_code,),
@@ -366,7 +348,6 @@ class CourseManager:
                     messagebox.showerror("Duplicate", f"Course with code {new_code} already exists")
                     return
                 
-            # Check for duplicate name (only if name changed)
             if new_name != current_name:
                 existing_name = self.db.execute_query(
                     "SELECT course_name FROM courses WHERE course_name = %s",
@@ -378,7 +359,6 @@ class CourseManager:
                     messagebox.showerror("Duplicate", f"Course with name {new_name} already exists")
                     return
 
-            # Update in database
             if self.db.update_course(current_code, new_code, new_name, college_code):
                 messagebox.showinfo("Success", "Course updated successfully")
                 self.refresh_table()

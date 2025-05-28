@@ -77,7 +77,6 @@ class MySQLDatabase:
                 where_clauses.append("s.gender = %s")
                 params.append(filters['gender'])
             
-            # Handle different search criteria
             if filters.get('search_id'):
                 where_clauses.append("s.student_id LIKE %s")
                 params.append(f"%{filters['search_id']}%")
@@ -91,7 +90,6 @@ class MySQLDatabase:
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
             
-        # Add sorting
         if filters and filters.get('sort_by'):
             sort_order = "DESC" if filters.get('sort_order') == "Descending" else "ASC"
             query += f" ORDER BY {filters['sort_by']} {sort_order}"
@@ -115,8 +113,7 @@ class MySQLDatabase:
             year_level = %s, college_code = %s, course_code = %s
         WHERE student_id = %s
         """
-        # The student_data should contain: new_id, first_name, last_name, age, gender, year_level, college_code, course_code
-        # Then we add old_student_id at the end
+
         params = (*student_data, old_student_id)
         return self.execute_query(query, params)
         
@@ -132,31 +129,26 @@ class MySQLDatabase:
         try:
             cursor = self.connection.cursor()
             
-            # Temporarily disable foreign key checks
             cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
             
-            # Update students table first
             cursor.execute("""
                 UPDATE students 
                 SET college_code = %s 
                 WHERE college_code = %s
             """, (college_code, old_code))
             
-            # Update courses table
             cursor.execute("""
                 UPDATE courses 
                 SET college_code = %s 
                 WHERE college_code = %s
             """, (college_code, old_code))
             
-            # Update colleges table
             cursor.execute("""
                 UPDATE colleges 
                 SET college_code = %s, college_name = %s 
                 WHERE college_code = %s
             """, (college_code, college_name, old_code))
             
-            # Re-enable foreign key checks
             cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
             
             self.connection.commit()
@@ -173,7 +165,6 @@ class MySQLDatabase:
         
     def delete_college(self, college_code):
         try:
-            # First update students to remove college reference (keep course)
             update_students_query = """
             UPDATE students 
             SET college_code = NULL 
@@ -181,7 +172,6 @@ class MySQLDatabase:
             """
             self.execute_query(update_students_query, (college_code,))
             
-            # Then update courses to remove college reference
             update_courses_query = """
             UPDATE courses 
             SET college_code = NULL 
@@ -189,7 +179,6 @@ class MySQLDatabase:
             """
             self.execute_query(update_courses_query, (college_code,))
             
-            # Then delete the college
             delete_query = "DELETE FROM colleges WHERE college_code = %s"
             return self.execute_query(delete_query, (college_code,))
         except Exception as e:
@@ -207,24 +196,20 @@ class MySQLDatabase:
         try:
             cursor = self.connection.cursor()
             
-            # Temporarily disable foreign key checks
             cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
             
-            # Update students table first
             cursor.execute("""
                 UPDATE students 
                 SET course_code = %s 
                 WHERE course_code = %s
             """, (course_code, old_code))
             
-            # Update courses table
             cursor.execute("""
                 UPDATE courses 
                 SET course_code = %s, course_name = %s, college_code = %s
                 WHERE course_code = %s
             """, (course_code, course_name, college_code, old_code))
             
-            # Re-enable foreign key checks
             cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
             
             self.connection.commit()
@@ -239,7 +224,6 @@ class MySQLDatabase:
                 cursor.close()
         
     def delete_course(self, course_code):
-        # First update students referencing this course
         update_query = """
         UPDATE students 
         SET course_code = NULL 
@@ -247,7 +231,6 @@ class MySQLDatabase:
         """
         self.execute_query(update_query, (course_code,))
         
-        # Then delete the course
         delete_query = "DELETE FROM courses WHERE course_code = %s"
         return self.execute_query(delete_query, (course_code,))
     
